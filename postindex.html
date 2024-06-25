@@ -1,0 +1,119 @@
+{% block page_title %}
+    <h2 style="text-align: center;">Blog Posts</h2>
+{% endblock page_title %}
+
+{% block page_content %}
+    <div class="post-container">
+        {% for post in posts %}
+            <div class="post">
+                <h3><a href="{% url 'blog_detail' post.pk %}">{{ post.title }}</a></h3>
+                <small>
+                    {{ post.created_on.date }} | Categories:
+                    {% for category in post.categories.all %}
+                        <a href="{% url 'blog_category' category.name %}">
+                            {{ category.name }}
+                        </a>
+                    {% endfor %}
+                </small>
+                {% if post.image %}
+                    <div class="post-image">
+                        <img src="{{ post.image.url }}" alt="{{ post.title }}" height="70px">
+                    </div>
+                {% endif %}
+                
+                <p>{{ post.body | slice:":400" }}...</p>
+                
+                
+                <button class="like-button" data-post-id="{{ post.pk }}">Like</button>
+                <span class="like-count">Likes: <span class="like-count-number">{{ post.likes }}</span></span>
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var likeButtons = document.querySelectorAll('.like-button');
+            likeButtons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    var postId = this.getAttribute('data-post-id');
+                    var likeCountSpan = this.nextElementSibling.querySelector('.like-count-number');
+                    var currentLikes = parseInt(likeCountSpan.textContent.trim()) || 0;
+                    likeCountSpan.textContent = currentLikes + 1;
+                    
+                    // AJAX call to update like count in backend (to be implemented)
+                    // Example AJAX call using fetch API (replace with your Django endpoint)
+                    fetch('/update-like/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'  // Ensure CSRF token is included
+                        },
+                        body: JSON.stringify({
+                            post_id: postId
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Optional: Handle backend response if needed
+                        console.log(data);  // Example: handle success or error messages
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                });
+            });
+        });
+    </script>
+{% endblock page_content %}
+
+<style>
+    .post-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .post {
+        width: 80%; /* Adjust width as per your design */
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #fff8e1; /* Cream background color */
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .post h3 {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+    
+    .post small {
+        color: #888;
+    }
+    
+    .post-image {
+        margin-bottom: 10px;
+    }
+    
+    .post img {
+        max-width: 70%;
+        height: 70%;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .post p {
+        line-height: 1.6;
+    }
+    
+    .like-count {
+        margin-left: 10px;
+    }
+</style>
